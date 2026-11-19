@@ -19,8 +19,28 @@
 #include <Wire.h> // I2C Library
 
 // Pin Numbers
+#define GREEN_LED 33
+#define RED_LED 4
+#define FAN_LED  25
+#define POT_PIN 34
+#define SPI_SCK 18
+#define SPI_MISO 19
+#define SPI_MOSI 23
+#define RFID_RST 5
+#define RFID_RST 16
+#define SD_CS 13
+#define OLED_CS 14
+#define OLED_DC 27
+#define OLED_RST 17
+#define BMP_SDA 21
+#define BMP_SCL 22
+#define HELP_BUTTON 32
+
 
 // Global Variables
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
 
 // RFID Check-In (Done by James, 1/3)
 
