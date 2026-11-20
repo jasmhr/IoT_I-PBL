@@ -18,14 +18,16 @@
 #include <Wire.h> // I2C Library
 
 // Pin Numbers
-#define GREEN_LED 33
-#define RED_LED 4
+#define GREEN_LED 33 // RFID Check-In
+#define RED_LED 4 // RFID Check-In
+#define RFID_RST 5 // RFID Check-In
+#define RFID_SS 15 // RFID Check-In
+#define BUZZER 26 // RFID Check-In
+#define SPI_SCK 18 // RFID Check-In
+#define SPI_MISO 19 // RFID Check-In
+#define SPI_MOSI 23 // RFID Check-In
 #define FAN_LED  25
 #define POT_PIN 34
-#define SPI_SCK 18
-#define SPI_MISO 19
-#define SPI_MOSI 23
-#define RFID_RST 5
 #define SD_CS 13
 #define OLED_CS 14
 #define OLED_DC 27
@@ -34,13 +36,102 @@
 #define BMP_SCL 22
 #define HELP_BUTTON 32
 
-
 // Global Variables
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
+// ------------------------------- RFID Check-In (Done by James, 1/3) ------------------------------
+// Per D. Saju, “Lab #9: MFRC522” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026 [1]
+MFRC522 rfid(RFID_SS, RFID_RST); // Create object
+unsigned long indicatorStart = 0; 
+unsigned long indicatorTime = 0; 
+bool indicatorOn = false; 
+String lastUID = "";
+unsigned long lastScanTime = 0; 
+String authorizedUIDs[] = {"D0 A3 F5 5F"}; 
+int numAuthorized = 1; 
 
-// RFID Check-In (Done by James, 1/3)
+// getUID() turns the card's UID bytes into text
+String getUID() {
+  String uid = "";
+  for (byte i = 0; i < rfid.uid.size; i++) {
+    if (rfid.uid.uidByte[i] < 0x10) {
+      uid = uid + "0";
+    }
+    uid = uid + String(rfid.uid.uidByte[i], HEX);
+    if (i < rfid.uid.size - 1) {
+      uid = uid + " ";
+    }
+  }
+  uid.toUpperCase();
+  return uid;
+}
+
+// isAuthorized() checks if the card's UID is in the authorizedUIDs array
+bool isAuthorized(String uid) { 
+  for (int i = 0; i < numAuthorized; i++) { 
+    if (uid == authorizedUIDs[i]) { 
+      return true; 
+    } 
+  } 
+  return false; 
+} 
+
+// startIndicatorTimer() starts the timer for the LED indicators
+void startIndicatorTimer(unsigned long duration) { 
+  indicatorStart = millis(); 
+  indicatorTime = duration; 
+  indicatorOn = true; 
+} 
+
+// allIndicatorsOff() turns off all the LED indicators and buzzer
+void allIndicatorsOff() { 
+  digitalWrite(GREEN_LED, LOW); 
+  digitalWrite(RED_LED, LOW); 
+  digitalWrite(BUZZER, LOW); 
+} 
+
+// onAccessGranted() is called when a valid card is detected
+void onAccessGranted() { 
+  Serial.println("ACCESS GRANTED"); 
+  allIndicatorsOff(); 
+  digitalWrite(GREEN_LED, HIGH); 
+  startIndicatorTimer(2000); 
+} 
+
+// onAccessDenied() is called when an invalid card is detected
+void onAccessDenied() { 
+  Serial.println("ACCESS DENIED"); 
+  allIndicatorsOff(); 
+  digitalWrite(RED_LED, HIGH); 
+  digitalWrite(BUZZER, HIGH); 
+  startIndicatorTimer(1000); 
+} 
+
+// onTimerExpired() is called when the indicator timer expires
+void onTimerExpired() { 
+  allIndicatorsOff(); 
+  indicatorOn = false; 
+  Serial.println("Ready"); 
+} 
+
+// onCardScanned() is called when a card is scanned
+void onCardScanned(String uid) { 
+  if (uid == lastUID && millis() - lastScanTime < 2000) { 
+    Serial.println("Repeat ignored"); 
+    return; 
+  } 
+  lastUID = uid; 
+  lastScanTime = millis(); 
+  Serial.print("Card UID: "); 
+  Serial.println(uid); 
+    if (isAuthorized(uid) == true) { 
+    onAccessGranted(); 
+    } 
+      else { 
+    onAccessDenied(); 
+  }
+}
 
 // Sensing & Display (Done by Desire, 1/3)
 
@@ -55,9 +146,31 @@
 // Staff Message over BLE (Done by Desire & James, 1/1)
 
 void setup() {
+  Serial.begin(115200);
+  Serial.println("Program Started");
 
+  // Pin Setup
+  pinMode(GREEN_LED, OUTPUT); // RFID Check-In
+  pinMode(RED_LED, OUTPUT); // RFID Check-In
+  pinMode(BUZZER, OUTPUT); // RFID Check-In
+
+  // RFID Check-In Setup
+  SPI.begin();
+  rfid.PCD_Init();
+  delay(10);
+  rfid.PCD_DumpVersionToSerial();
+  Serial.println("Tap a card...");
 }
 
 void loop() {
-
+    // RFID Check-In Loop
+    if (rfid.PICC_IsNewCardPresent() == true && rfid.PICC_ReadCardSerial() == true) { 
+    String uid = getUID(); 
+    onCardScanned(uid); 
+    rfid.PICC_HaltA(); 
+    rfid.PCD_StopCrypto1(); 
+    }
+    if (indicatorOn == true && millis() - indicatorStart >= indicatorTime) { 
+    onTimerExpired(); 
+    }
 }
