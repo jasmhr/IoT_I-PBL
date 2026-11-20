@@ -12,7 +12,6 @@
 #include <ArduinoJson.h> // Json Library
 #include <BLE_UART.h> // Bluetooth Library
 #include <MFRC522.h> // RFID Library
-#include <SD.h> // SD Card Library
 #include <SPI.h> // SPI Library
 #include <WebServer.h> // WebServer Library
 #include <Wifi.h> // WiFi Library
@@ -27,7 +26,6 @@
 #define SPI_MISO 19
 #define SPI_MOSI 23
 #define RFID_RST 5
-#define RFID_RST 16
 #define SD_CS 13
 #define OLED_CS 14
 #define OLED_DC 27
