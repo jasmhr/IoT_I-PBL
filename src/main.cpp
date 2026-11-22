@@ -41,14 +41,12 @@
 
 // ------------------------------- RFID Check-In (Done by James, 1/3) ------------------------------
 // [1] D. Saju, “Lab #9: MFRC522” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
-MFRC522 rfid(RFID_SS, RFID_RST);
-unsigned long indicatorStart = 0; 
-unsigned long indicatorTime = 0; 
-bool indicatorOn = false; 
-String lastUID = "";
-unsigned long lastScanTime = 0; 
-String authorizedUIDs[] = {"D0 A3 F5 5F"}; 
-int numAuthorized = 1; 
+MFRC522 rfid(RFID_SS, RFID_RST); // Create MFRC22 Object
+String lastUID = ""; // Store Last Scanned UID
+unsigned long lastScanTime = 0;  // Store Last Scan Time
+String authorizedUIDs[] = {"D0 A3 F5 5F"}; // Store Authorized UIDs
+int numAuthorized = 1; // Number Of Authorized UIDs
+bool roomOccupied = false; // Track Room Status
 
 // getUID() turns the card's UID bytes into text
 String getUID() {
@@ -76,43 +74,32 @@ bool isAuthorized(String uid) {
   return false; 
 } 
 
-// startIndicatorTimer() starts the timer for the LED indicators
-void startIndicatorTimer(unsigned long duration) { 
-  indicatorStart = millis(); 
-  indicatorTime = duration; 
-  indicatorOn = true; 
-} 
-
 // allIndicatorsOff() turns off all the LED indicators
 void allIndicatorsOff() { 
   digitalWrite(GREEN_LED, LOW); 
   digitalWrite(RED_LED, LOW);
-  Serial.println("FREE");
 } 
 
 // onAccessGranted() is called when a valid card is detected
 void onAccessGranted() { 
   Serial.println("ACCESS GRANTED"); 
-  allIndicatorsOff(); 
-  digitalWrite(GREEN_LED, HIGH); 
-  Serial.println("OCCUPIED");
-  startIndicatorTimer(2000);
-} 
+  allIndicatorsOff();
+  roomOccupied = !roomOccupied;
+  if (roomOccupied == true) {         // Runs if the room is occupied
+    digitalWrite(GREEN_LED, HIGH); 
+    Serial.println("OCCUPIED"); 
+  } 
+  else {                              // Runs if the room is free
+    Serial.println("FREE");
+  }
+}
 
 // onAccessDenied() is called when an invalid card is detected
 void onAccessDenied() { 
   Serial.println("ACCESS DENIED"); 
   allIndicatorsOff(); 
   digitalWrite(RED_LED, HIGH);
-  startIndicatorTimer(1000); 
-} 
-
-// onTimerExpired() is called when the indicator timer expires
-void onTimerExpired() { 
-  allIndicatorsOff(); 
-  indicatorOn = false; 
-  Serial.println("Ready"); 
-} 
+}
 
 // onCardScanned() is called when a card is scanned
 void onCardScanned(String uid) { 
@@ -125,10 +112,10 @@ void onCardScanned(String uid) {
   Serial.print("Card UID: "); 
   Serial.println(uid); 
     if (isAuthorized(uid) == true) { 
-    onAccessGranted(); 
+      onAccessGranted(); 
     } 
-      else { 
-    onAccessDenied(); 
+    else { 
+      onAccessDenied(); 
   }
 }
 
@@ -160,14 +147,11 @@ void setup() {
 }
 
 void loop() {
-    // RFID Check-In Loop
-    if (rfid.PICC_IsNewCardPresent() == true && rfid.PICC_ReadCardSerial() == true) { 
+  // RFID Check-In Loop
+  if (rfid.PICC_IsNewCardPresent() == true && rfid.PICC_ReadCardSerial() == true) { 
     String uid = getUID(); 
     onCardScanned(uid); 
     rfid.PICC_HaltA(); 
-    rfid.PCD_StopCrypto1(); 
-    }
-    if (indicatorOn == true && millis() - indicatorStart >= indicatorTime) { 
-    onTimerExpired(); 
-    }
+    rfid.PCD_StopCrypto1();
+  }
 }
