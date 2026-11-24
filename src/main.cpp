@@ -15,7 +15,7 @@
 #include <SD.h> // SD Card Library
 #include <SPI.h> // SPI Library
 #include <WebServer.h> // WebServer Library
-#include <Wifi.h> // WiFi Library
+#include <WiFi.h> // WiFi Library
 #include <Wire.h> // I2C Library
 
 // Pin Numbers
@@ -130,7 +130,11 @@ void onCardScanned(String uid) {
 File dataFile; // Create File Object
 // Add Variables for Room Status
 
-// Staff Data Page (Done by James, 3/3)
+// ------------------------------- Staff Data Page (Done by James, 3/3) -------------------------------
+// [6] D. Saju, " Lab #7: ESP32 Wi-Fi Access Points and Web Servers" 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+const char* ssid = "SmartStudyRoomJD"; // Wi-Fi Access Point SSID
+const char* password = "12345678"; // Wi-Fi Access Point Password
+Webserver server(80); // Create Web Server Object
 
 // [SPECIAL FEATURE] Staff Message over BLE (Done by Desire & James, 1/1)
 
@@ -158,6 +162,14 @@ void setup() {
   Serial.println("Failed To Create File");
   }
 
+// Wi-Fi code
+WiFi.softAP(ssid, password);
+Serial.print("IP Address: ");
+Serial.println( WiFi.softAPIP());
+// Server start
+server.begin();
+Serial.println("Web Server Started");
+
   // Pin Setup
   pinMode(GREEN_LED, OUTPUT); // RFID Check-In
   pinMode(RED_LED, OUTPUT); // RFID Check-In
@@ -170,6 +182,9 @@ void setup() {
 }
 
 void loop() {
+  // Server Loop
+  server.handleClient();
+
   // RFID Check-In Loop
   if (rfid.PICC_IsNewCardPresent() == true && rfid.PICC_ReadCardSerial() == true) { 
     String uid = getUID(); 
