@@ -127,33 +127,8 @@ Void checkHelpButton(){
 
 // Staff Message over BLE (Done by Desire & James, 1/1)
 
-void setup() {
-  Serial.begin(115200);
-  pinMode(RFID_SS, OUTPUT);
-  pinMode(SD_CS, OUTPUT);
-  pinMode(OLED_CS, OUTPUT);
-  deselectSPI();
-  pinMode(HELP_BUTTON, INPUT_PULLUP);
-  pinMode(POT_PIN, INPUT);
+void setup() 
 
-  // Arduino-ESP32 core 2.x PWM API (core 3.x needs different calls).
-  ledcSetup(FAN_CHANNEL, FAN_FREQ, FAN_RESOLUTION);
-  ledcAttachPin(FAN_LED, FAN_CHANNEL);
-  ledcWrite(FAN_CHANNEL, 0);
-
-  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
-  Wire.begin(BMP_SDA, BMP_SCL);
-  sensorReady = bmp.begin(0x76);
-  if (!sensorReady) sensorReady = bmp.begin(0x77);
-  if (!sensorReady) Serial.println("BMP280 not found");
-
-  deselectSPI();
-  oledReady = display.begin(SSD1306_SWITCHCAPVCC);
-  if (!oledReady) Serial.println("OLED initialization failed");
-  deselectSPI();
-
-  attachInterrupt(digitalPinToInterrupt(HELP_BUTTON), helpISR, FALLING);
-}
 
 void loop() {
 
