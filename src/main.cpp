@@ -134,7 +134,7 @@ File dataFile; // Create File Object
 // [6] D. Saju, " Lab #7: ESP32 Wi-Fi Access Points and Web Servers" 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
 const char* ssid = "SmartStudyRoomJD"; // Wi-Fi Access Point SSID
 const char* password = "12345678"; // Wi-Fi Access Point Password
-Webserver server(80); // Create Web Server Object
+WebServer server(80); // Create Web Server Object
 
 // [SPECIAL FEATURE] Staff Message over BLE (Done by Desire & James, 1/1)
 
