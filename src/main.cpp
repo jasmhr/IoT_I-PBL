@@ -12,6 +12,7 @@
 #include <ArduinoJson.h> // Json Library
 #include <BLE_UART.h> // Bluetooth Library
 #include <MFRC522.h> // RFID Library
+#include <SD.h> // SD Card Library
 #include <SPI.h> // SPI Library
 #include <WebServer.h> // WebServer Library
 #include <Wifi.h> // WiFi Library
@@ -22,12 +23,12 @@
 #define RED_LED 4 // RFID Check-In
 #define RFID_RST 5 // RFID Check-In
 #define RFID_SS 15 // RFID Check-In
-#define SPI_SCK 18 // RFID Check-In
-#define SPI_MISO 19 // RFID Check-In
-#define SPI_MOSI 23 // RFID Check-In
+#define SPI_SCK 18 // RFID Check-In, Data Logging
+#define SPI_MISO 19 // RFID Check-In, Data Logging
+#define SPI_MOSI 23 // RFID Check-In, Data Logging
+#define SD_CS 13 // Data Logging
 #define FAN_LED  25
 #define POT_PIN 34
-#define SD_CS 13
 #define OLED_CS 14
 #define OLED_DC 27
 #define OLED_RST 17
@@ -39,7 +40,7 @@
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
-// ------------------------------- RFID Check-In (Done by James, 1/3) ------------------------------
+// ------------------------------- RFID Check-In (Done by James, 1/3) -------------------------------
 // [1] D. Saju, “Lab #9: MFRC522” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
 MFRC522 rfid(RFID_SS, RFID_RST); // Create MFRC22 Object
 String lastUID = ""; // Store Last Scanned UID
@@ -124,15 +125,38 @@ void onCardScanned(String uid) {
 
 // Event and Status Byte (Done by Desire, 3/3)
 
-// Data Logging (Done by James, 2/3)
+// ------------------------------- Data Logging (Done by James, 2/3) -------------------------------
+// [5] D. Saju, “Lab #5: SPI & SD Card” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+File dataFile; // Create File Object
+// Add Variables for Room Status
 
 // Staff Data Page (Done by James, 3/3)
 
 // [SPECIAL FEATURE] Staff Message over BLE (Done by Desire & James, 1/1)
 
 void setup() {
+  // Data Logging Setup
+  SPI.begin(); // Initialize SPI
+  millis(); // Initialize millis() function to track time since start-up
   Serial.begin(115200);
   Serial.println("Program Started");
+  Serial.println("Initializing SD Card...");
+  if(SD.begin(SD_CS)) { 
+    Serial.println("SD Card Found"); 
+  } 
+  else { 
+  Serial.println("SD Card Not Found"); 
+  }
+
+  dataFile = SD.open("datalogging.csv", FILE_WRITE);
+  if(dataFile) {
+    dataFile.println("Time, Status"); // CSV Header
+    dataFile.close();
+    Serial.println("CSV Header Written");
+  }
+  else {
+  Serial.println("Failed To Create File");
+  }
 
   // Pin Setup
   pinMode(GREEN_LED, OUTPUT); // RFID Check-In
@@ -152,5 +176,20 @@ void loop() {
     onCardScanned(uid); 
     rfid.PICC_HaltA(); 
     rfid.PCD_StopCrypto1();
+  }
+
+  // Data Logging Loop
+  unsigned long timeSeconds = millis() / 1000;
+  // Add If Statement to Write Data to SD Card when Status Changes
+  dataFile = SD.open("datalogging.csv", FILE_WRITE);
+    if(dataFile) {
+      dataFile.print(timeSeconds);
+      dataFile.print(",");
+      // Write Check-In/Out Status
+      dataFile.close();
+      Serial.println("Data Saved");
+    }
+    else {
+    Serial.println("Error Opening File");
   }
 }
