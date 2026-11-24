@@ -26,7 +26,7 @@
 #define SPI_SCK 18
 #define SPI_MISO 19
 #define SPI_MOSI 23
-#define RFID_RST 5
+#define RFID_SS 5
 #define RFID_RST 16
 #define SD_CS 13
 #define OLED_CS 14
@@ -38,10 +38,10 @@
 
 
 // Global Variables
-// Status Byte
-const byte OCCUPIED_MASK = (1 << 0);
-const byte HOT_MASK = (1 << 1);
-const byte HELP_MASK = (1 << 2);
+// Status Byte (lecture 2 slides)
+const byte OCCUPIED_MASK = 0b00000001;
+const byte HOT_MASK      = 0b00000010;
+const byte HELP_MASK     = 0b00000100;
 byte statusByte = 0;
 
 
@@ -84,7 +84,11 @@ const unsigned long HELP_DEBOUNCE = 250;
 
 
 // Sensing & Display (Done by Desire, 1/3)
-
+void deselectSPI() {
+  digitalWrite(RFID_SS, HIGH);
+  digitalWrite(SD_CS, HIGH);
+  digitalWrite(OLED_CS, HIGH);
+}
 
 
 // Fan Control - Lab 12 is used as reference (Done by Desire, 2/3)
@@ -99,22 +103,22 @@ void adjustFanSpeed() {
 
 // Event and Status Byte (Done by Desire, 3/3)
 
-Void IRAM_ATTR helpISR(){
+void IRAM_ATTR helpISR(){
 helpFlag = true;
 }
 
-Void checkHelpButton(){
+void checkHelpButton(){
   if(helpFlag)
     helpFlag = false;
    interrupts();
   
-   unsigned long now = milis();
+   unsigned long now = millis();
    if (now - lastHelpTime < HELP_DEBOUNCE) return;
    if (digitalRead(HELP_BUTTON) == LOW)
    
      lastHelpTime = now;
      changeStatus(HELP_MASK, true);
-     Srerial.println("Help Button Pressed");
+     Serial.println("Help Button Pressed");
    }
 
 // Data Logging (Done by James, 2/3)
@@ -135,14 +139,20 @@ void setup() {
   //Lab 12 ADC & PWM settings
 analogReadResolution(12);
 analogSetAttenuation(ADC_11db);
-ledcSetup(FAN_CHANNEL, FAN_FREQ, FAN_RESOLUTION);
-ledcWrite(FAN_LED, 0);
+ledcAttach(FAN_LED, FAN_FREQ, FAN_RESOLUTION);
+ledcWrite(FAN_CHANNEL, 0);
 
 SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
  Wire.begin(BMP_SDA, BMP_SCL);
   sensorReady = bmp.begin(0x76);
   if (!sensorReady) sensorReady = bmp.begin(0x77);
   if (!sensorReady) Serial.println("BMP280 not found");
+
+  deselectSPI();
+  oledReady = display.begin(SSD1306_SWITCHCAPVCC);
+  if (!oledReady) Serial.println("OLED initialization failed");
+  deselectSPI();
+  attachInterrupt(digitalPinToInterrupt(HELP_BUTTON), helpISR, FALLING);
 }
 
 
