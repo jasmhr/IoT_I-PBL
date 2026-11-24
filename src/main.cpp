@@ -98,6 +98,51 @@ void deselectSPI() {
   digitalWrite(SD_CS, HIGH);
   digitalWrite(OLED_CS, HIGH);
 }
+// calculating averages of store tmp valuesLab 11
+float getAverage()
+{
+    float sum = 0;
+    float average = 0;
+
+    if (tempCount > 0)
+    {
+        for (int i = 0; i < tempCount; i++)
+        {
+            sum = sum + temperatures[i];
+        }
+
+        average = sum / tempCount;
+    }
+
+    return average;
+}
+
+// storing new temp values in the array  
+void readTemperature()
+{
+    if (sensorReady)
+    {
+        float currentTemp = bmp.readTemperature();
+        if (!isnan(currentTemp))
+        {
+            temperatures[tempIndex] = currentTemp;
+            tempIndex++;
+            if (tempIndex == 10)
+            {
+                tempIndex = 0;
+            }
+            if (tempCount < 10)
+            {
+                tempCount++;
+            }
+            averageTemperature = getAverage();
+
+            Serial.print("Average temperature: ");
+            Serial.println(averageTemperature, 1);
+        }
+    }
+}
+
 
 
 
@@ -113,6 +158,9 @@ void adjustFanSpeed() {
 
 // Event and Status Byte (Done by Desire, 3/3)
 
+
+
+// Help button - lab 10 
 void IRAM_ATTR helpISR(){
 helpFlag = true;
 }
