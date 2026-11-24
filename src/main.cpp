@@ -81,8 +81,7 @@ void allIndicatorsOff() {
 } 
 
 // onAccessGranted() is called when a valid card is detected
-void onAccessGranted() { 
-  Serial.println("ACCESS GRANTED"); 
+void onAccessGranted() {
   allIndicatorsOff();
   roomOccupied = !roomOccupied;
   if (roomOccupied == true) {         // Runs if the room is occupied
