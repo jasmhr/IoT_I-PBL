@@ -1,7 +1,7 @@
 // Internet of Things 1 (243-3E5-DW)
 // PBL - Smart Study Room Station
 // Made By James Hamdi & Desire Gonyora
-// December 3rd 2026
+// November 26th 2026
 
 // Libraries
 #include <Adafruit_GFX.h> // Graphics Library
@@ -14,7 +14,7 @@
 #include <MFRC522.h> // RFID Library
 #include <SPI.h> // SPI Library
 #include <WebServer.h> // WebServer Library
-#include <Wifi.h> // WiFi Library
+#include <WiFi.h> // WiFi Library
 #include <Wire.h> // I2C Library
 
 // Pin Numbers
