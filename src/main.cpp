@@ -14,7 +14,7 @@
 #include <MFRC522.h> // RFID Library
 #include <SPI.h> // SPI Library
 #include <WebServer.h> // WebServer Library
-#include <Wifi.h> // WiFi Library
+#include <WiFi.h> // WiFi Library
 #include <Wire.h> // I2C Library
 
 // Pin Numbers
