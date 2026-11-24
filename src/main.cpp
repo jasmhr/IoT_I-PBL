@@ -45,23 +45,32 @@ const byte HELP_MASK     = 0b00000100;
 byte statusByte = 0;
 
 
-// OLED Display
+// OLED Display 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 Adafruit_BMP280 bmp;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI,
                          OLED_DC, OLED_RST, OLED_CS);
-// pwm fan control
+// pwm fan control - Lab 12
 #define FAN_CHANNEL 0
 #define FAN_FREQ 5000
 #define FAN_RESOLUTION 8
 
-float temperatures[10] = {0};
+// SENSING AND AVERAGING VARIABLES Lab 6 & 11
+
+const int NUM_SAMPLES = 10;
+float temperatures[NUM_SAMPLES];
+float averageTemperature = 0;
+
+// Temperature index array & valid temperature readings
 int tempIndex = 0;
 int tempCount = 0;
-float averageTemperature = 0;
-float setPoint = 24.0;
+
+// FAN CONTROL VARIABLES - Lab 12
+float tempPoint = 24.0;
 int fanLevel = 0;
+
+// SENSOR AND DISPLAY INITIALIZATION FLAGS - Lab 6
 bool sensorReady = false;
 bool oledReady = false;
 // 
@@ -91,11 +100,12 @@ void deselectSPI() {
 }
 
 
+
 // Fan Control - Lab 12 is used as reference (Done by Desire, 2/3)
 
 void adjustFanSpeed() {
   int potValue = analogRead(POT_PIN);
-  setPoint = map(potValue, 0, 4095, 180, 300) / 10.0;
+  tempPoint = map(potValue, 0, 4095, 180, 300) / 10.0;
   
 }
 
