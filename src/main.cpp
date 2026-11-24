@@ -127,7 +127,23 @@ Void checkHelpButton(){
 
 // Staff Message over BLE (Done by Desire & James, 1/1)
 
-void setup() 
+void setup() {
+  pinMode(OLED_CS, OUTPUT);
+  pinMode(HELP_BUTTON, INPUT_PULLUP);
+  pinMode(POT_PIN, INPUT);
+ 
+  //Lab 12 ADC & PWM settings
+analogReadResolution(12);
+analogSetAttenuation(ADC_11db);
+ledcSetup(FAN_CHANNEL, FAN_FREQ, FAN_RESOLUTION);
+ledcWrite(FAN_LED, 0);
+
+SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+ Wire.begin(BMP_SDA, BMP_SCL);
+  sensorReady = bmp.begin(0x76);
+  if (!sensorReady) sensorReady = bmp.begin(0x77);
+  if (!sensorReady) Serial.println("BMP280 not found");
+}
 
 
 void loop() {
