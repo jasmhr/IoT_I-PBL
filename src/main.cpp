@@ -38,26 +38,121 @@
 
 
 // Global Variables
+// Status Byte
+const byte OCCUPIED_MASK = (1 << 0);
+const byte HOT_MASK = (1 << 1);
+const byte HELP_MASK = (1 << 2);
+byte statusByte = 0;
+
+
+// OLED Display
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
+Adafruit_BMP280 bmp;
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI,
+                         OLED_DC, OLED_RST, OLED_CS);
+// pwm fan control
+#define FAN_CHANNEL 0
+#define FAN_FREQ 5000
+#define FAN_RESOLUTION 8
+
+float temperatures[10] = {0};
+int tempIndex = 0;
+int tempCount = 0;
+float averageTemperature = 0;
+float setPoint = 24.0;
+int fanLevel = 0;
+bool sensorReady = false;
+bool oledReady = false;
+// 
+volatile bool helpFlag = false;
+unsigned long lastHelpTime = 0;
+unsigned long lastTempTime = 0;
+unsigned long lastDisplayTime = 0;
+const unsigned long TEMP_INTERVAL = 2000;
+const unsigned long DISPLAY_INTERVAL = 500;
+const unsigned long HELP_DEBOUNCE = 250;
+
+
+
+
 
 
 // RFID Check-In (Done by James, 1/3)
 
+
+
+
 // Sensing & Display (Done by Desire, 1/3)
 
-// Fan Control (Done by Desire, 2/3)
+
+
+// Fan Control - Lab 12 is used as reference (Done by Desire, 2/3)
+
+void adjustFanSpeed() {
+  int potValue = analogRead(POT_PIN);
+  setPoint = map(potValue, 0, 4095, 180, 300) / 10.0;
+  
+}
+
+
 
 // Event and Status Byte (Done by Desire, 3/3)
 
+Void IRAM_ATTR helpISR(){
+helpFlag = true;
+}
+
+Void checkHelpButton(){
+  if(helpFlag)
+    helpFlag = false;
+   interrupts();
+  
+   unsigned long now = milis();
+   if (now - lastHelpTime < HELP_DEBOUNCE) return;
+   if (digitalRead(HELP_BUTTON) == LOW)
+   
+     lastHelpTime = now;
+     changeStatus(HELP_MASK, true);
+     Srerial.println("Help Button Pressed");
+   }
+
 // Data Logging (Done by James, 2/3)
 
+
+
 // Staff Data Page (Done by James, 3/3)
+
+
 
 // Staff Message over BLE (Done by Desire & James, 1/1)
 
 void setup() {
+  Serial.begin(115200);
+  pinMode(RFID_SS, OUTPUT);
+  pinMode(SD_CS, OUTPUT);
+  pinMode(OLED_CS, OUTPUT);
+  deselectSPI();
+  pinMode(HELP_BUTTON, INPUT_PULLUP);
+  pinMode(POT_PIN, INPUT);
 
+  // Arduino-ESP32 core 2.x PWM API (core 3.x needs different calls).
+  ledcSetup(FAN_CHANNEL, FAN_FREQ, FAN_RESOLUTION);
+  ledcAttachPin(FAN_LED, FAN_CHANNEL);
+  ledcWrite(FAN_CHANNEL, 0);
+
+  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+  Wire.begin(BMP_SDA, BMP_SCL);
+  sensorReady = bmp.begin(0x76);
+  if (!sensorReady) sensorReady = bmp.begin(0x77);
+  if (!sensorReady) Serial.println("BMP280 not found");
+
+  deselectSPI();
+  oledReady = display.begin(SSD1306_SWITCHCAPVCC);
+  if (!oledReady) Serial.println("OLED initialization failed");
+  deselectSPI();
+
+  attachInterrupt(digitalPinToInterrupt(HELP_BUTTON), helpISR, FALLING);
 }
 
 void loop() {
