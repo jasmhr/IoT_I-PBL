@@ -211,7 +211,8 @@ void updateDisplay()
         {
             display.println("HELP REQUESTED");
         }
-
+      }
+     }
 // Event and Status Byte (Done by Desire, 3/3)
 
 void printStatusByte()
