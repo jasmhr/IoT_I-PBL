@@ -143,7 +143,7 @@ void readTemperature()
     }
 }
 
-
+//  Displaying on the OLED lab 6 & 8 
 
 
 // Fan Control - Lab 12 is used as reference (Done by Desire, 2/3)
@@ -151,20 +151,123 @@ void readTemperature()
 void adjustFanSpeed() {
   int potValue = analogRead(POT_PIN);
   tempPoint = map(potValue, 0, 4095, 180, 300) / 10.0;
-  
+   bool tooHot = sensorReady && tempCount > 0 &&
+                averageTemperature > setPoint;
+  changeStatus(HOT_MASK, tooHot);
+
+  if (statusIsOn(OCCUPIED_MASK) && tooHot) {
+    float difference = averageTemperature - setPoint;
+    fanLevel = map((int)(difference * 10), 0, 60, 0, 255);
+    if (fanLevel > 255) fanLevel = 255;
+    if (fanLevel < 1) fanLevel = 1;
+  } else {
+    fanLevel = 0;
+  }
+  ledcWrite(FAN_LED, fanLevel);
 }
 
+void updateDisplay()
+{
+    if (oledReady == true)
+    {
+        deselectSPI();
+        display.clearDisplay();
+        display.setTextColor(SSD1306_WHITE);
+        display.setTextSize(1);
+        display.setCursor(0, 0);
+        display.println("Smart Study Room");
 
+        // Room Status
+        if (statusIsOn(OCCUPIED_MASK) == true)
+        {
+            display.println("Room: Occupied");
+        }
+        else
+        {
+            display.println("Room: Free");
+        }
+
+        // Average Temperature
+        display.print("Avg temp: ");
+        if (tempCount > 0)
+        {
+            display.print(averageTemperature);
+        }
+        else
+        {
+            display.print("--");
+        }
+        display.println(" C");
+
+        // Set Point and Fan Level
+        display.print("Set point: ");
+        display.print(setPoint);
+        display.println(" C");
+        display.print("Fan PWM: ");
+        display.println(fanLevel);
+
+        // Help Request
+        if (statusIsOn(HELP_MASK) == true)
+        {
+            display.println("HELP REQUESTED");
+        }
 
 // Event and Status Byte (Done by Desire, 3/3)
 
+void printStatusByte()
+{
+    Serial.print("Status byte: ");
+    for (int bit = 7; bit >= 0; bit--)
+    {
+        Serial.print((statusByte >> bit) & 1);
+    }
+    Serial.println();
+}
 
+void changeStatus(byte mask, bool turnOn)
+{
+    byte previous = statusByte;
+    if (turnOn == true)
+    {
+        statusByte |= mask;
+    }
+    else
+    {
+        statusByte &= ~mask;
+    }
+    if (previous != statusByte)
+    {
+        printStatusByte();
+    }
+}
+bool statusIsOn(byte mask)
+{
+    bool result = false;
 
+    if ((statusByte & mask) != 0)
+    {
+        result = true;
+    }
+
+    return result;
+}
+void setOccupied(bool occupied)
+{
+    changeStatus(OCCUPIED_MASK, occupied);
+
+    if (occupied == true)
+    {
+        Serial.println("Room occupied");
+    }
+    else
+    {
+        Serial.println("Room free");
+    }
+}
 // Help button - lab 10 
 void IRAM_ATTR helpISR(){
 helpFlag = true;
 }
-
 void checkHelpButton(){
   if(helpFlag)
     helpFlag = false;
