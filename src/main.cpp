@@ -162,13 +162,13 @@ void setup() {
   Serial.println("Failed To Create File");
   }
 
-// Wi-Fi code
-WiFi.softAP(ssid, password);
-Serial.print("IP Address: ");
-Serial.println( WiFi.softAPIP());
-// Server start
-server.begin();
-Serial.println("Web Server Started");
+  // Wi-Fi code
+  WiFi.softAP(ssid, password);
+  Serial.print("IP Address: ");
+  Serial.println( WiFi.softAPIP());
+  // Server start
+  server.begin();
+  Serial.println("Web Server Started");
 
   // Pin Setup
   pinMode(GREEN_LED, OUTPUT); // RFID Check-In
