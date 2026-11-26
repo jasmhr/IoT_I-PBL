@@ -1,7 +1,7 @@
 // Internet of Things 1 (243-3E5-DW)
 // PBL - Smart Study Room Station
 // Made By James Hamdi & Desire Gonyora
-// November 26th 2026
+// December 3rd 2026
 
 // Libraries
 #include <Adafruit_GFX.h> // Graphics Library
@@ -149,7 +149,7 @@ void setup() {
     Serial.println("SD Card Found"); 
   } 
   else { 
-  Serial.println("SD Card Not Found"); 
+    Serial.println("SD Card Not Found"); 
   }
 
   dataFile = SD.open("datalogging.csv", FILE_WRITE);
@@ -159,7 +159,7 @@ void setup() {
     Serial.println("CSV Header Written");
   }
   else {
-  Serial.println("Failed To Create File");
+    Serial.println("Failed To Create File");
   }
 
   // Wi-Fi code
