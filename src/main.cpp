@@ -42,12 +42,17 @@
 
 // ------------------------------- RFID Check-In (Done by James, 1/3) -------------------------------
 // [1] D. Saju, “Lab #9: MFRC522” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+// [2] https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/ 
 MFRC522 rfid(RFID_SS, RFID_RST); // Create MFRC22 Object
 String lastUID = ""; // Store Last Scanned UID
 unsigned long lastScanTime = 0;  // Store Last Scan Time
 String authorizedUIDs[] = {"D0 A3 F5 5F"}; // Store Authorized UIDs
 int numAuthorized = 1; // Number Of Authorized UIDs
 bool roomOccupied = false; // Track Room Status
+int ledState = LOW; // Variable to make the Red LED Flash
+const long interval = 1000; // Blinking Interval in ms
+unsigned long previousMillis = 0; // Store Last LED Update
+unsigned long currentMillis = millis(); // Store Current Millis()
 
 // getUID() turns the card's UID bytes into text
 String getUID() {
@@ -98,7 +103,15 @@ void onAccessGranted() {
 void onAccessDenied() { 
   Serial.println("ACCESS DENIED"); 
   allIndicatorsOff(); 
-  digitalWrite(RED_LED, HIGH);
+  if (currentMillis - millis() >= interval) {
+    previousMillis = currentMillis;
+    if (ledState == LOW) {
+      ledState = HIGH;
+    } else {
+      ledState = LOW;
+    }
+  digitalWrite(RED_LED, ledState);
+  }
 }
 
 // onCardScanned() is called when a card is scanned
