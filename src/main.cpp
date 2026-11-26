@@ -93,12 +93,12 @@ void onAccessGranted() {
   if (roomOccupied == true) { // Runs if the room is occupied
     digitalWrite(GREEN_LED, HIGH); 
     // checkInCallback(); // Call checkIn handler
-    onCheckIn();
+    // onCheckIn();
     Serial.println("OCCUPIED"); 
   } 
   else { // Runs if the room is checked out of or free
     // checkOutCallback(); // Call checkOut handler
-    onCheckOut();
+    // onCheckOut();
     Serial.println("FREE");
   }
 }
