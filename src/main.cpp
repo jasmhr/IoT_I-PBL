@@ -1,6 +1,6 @@
 // Internet of Things 1 (243-3E5-DW)
 // PBL - Smart Study Room Station
-// Made By James Hamdi & Desire Gonyora
+// Made by James Hamdi & Desire Gonyora
 // December 3rd 2026
 
 // Libraries
@@ -90,11 +90,15 @@ void allIndicatorsOff() {
 void onAccessGranted() {
   allIndicatorsOff();
   roomOccupied = !roomOccupied;
-  if (roomOccupied == true) {         // Runs if the room is occupied
+  if (roomOccupied == true) { // Runs if the room is occupied
     digitalWrite(GREEN_LED, HIGH); 
+    // checkInCallback(); // Call checkIn handler
+    onCheckIn();
     Serial.println("OCCUPIED"); 
   } 
-  else {                              // Runs if the room is free
+  else { // Runs if the room is checked out of or free
+    // checkOutCallback(); // Call checkOut handler
+    onCheckOut();
     Serial.println("FREE");
   }
 }
@@ -140,11 +144,67 @@ void onCardScanned(String uid) {
 
 // ------------------------------- Data Logging (Done by James, 2/3) -------------------------------
 // [5] D. Saju, “Lab #5: SPI & SD Card” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
-File dataFile; // Create File Object
-// Add Variables for Room Status
+// [6] D. Saju, “Lab #10: Event-Driven Programming” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+unsigned long timeSeconds = millis() / 1000; // Track time
+File dataFile; // Create file object
+
+// volatile bool checkInFlag = false; // Flag a check-in
+// volatile bool checkOutFlag = false; // Flag a check-out
+// typedef void (*Callback)();
+// Callback checkInCallback;
+// Callback checkOutCallback;
+// Callback helpButtonCallback;
+
+void onCheckIn() {
+  dataFile = SD.open("log.csv", FILE_WRITE);
+  if(dataFile) {
+    dataFile.print(timeSeconds);
+    dataFile.print(",");
+    dataFile.print("Check-In");
+    dataFile.close();
+    Serial.println("Check-In Logged");
+  }
+  else {
+    Serial.println("Error Opening File");
+  }
+}
+
+void onCheckOut() {
+  dataFile = SD.open("log.csv", FILE_WRITE);
+  if(dataFile) {
+    dataFile.print(timeSeconds);
+    dataFile.print(",");
+    dataFile.print("Check-Out");
+    dataFile.close();
+    Serial.println("Check-Out Logged");
+  }
+  else {
+    Serial.println("Error Opening File");
+  }
+}
+
+void onHelpRequested() {
+  dataFile = SD.open("log.csv", FILE_WRITE);
+  if(dataFile) {
+    dataFile.print(timeSeconds);
+    dataFile.print(",");
+    dataFile.print("Help Requested");
+    dataFile.close();
+    Serial.println("Help Request Logged");
+  }
+  else {
+    Serial.println("Error Opening File");
+  }
+}
+
+// Callbacks
+// checkInCallback = onCheckIn;
+// checkOutCallback = onCheckOut;
+// helpButtonCallback = onHelpRequested;
+
 
 // ------------------------------- Staff Data Page (Done by James, 3/3) -------------------------------
-// [6] D. Saju, " Lab #7: ESP32 Wi-Fi Access Points and Web Servers" 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+// [7] D. Saju, " Lab #7: ESP32 Wi-Fi Access Points and Web Servers" 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
 const char* ssid = "SmartStudyRoomJD"; // Wi-Fi Access Point SSID
 const char* password = "12345678"; // Wi-Fi Access Point Password
 WebServer server(80); // Create Web Server Object
@@ -165,9 +225,9 @@ void setup() {
     Serial.println("SD Card Not Found"); 
   }
 
-  dataFile = SD.open("datalogging.csv", FILE_WRITE);
+  dataFile = SD.open("log.csv", FILE_WRITE);
   if(dataFile) {
-    dataFile.println("Time, Status"); // CSV Header
+    dataFile.println("Time, Event"); // CSV Header
     dataFile.close();
     Serial.println("CSV Header Written");
   }
@@ -204,20 +264,5 @@ void loop() {
     onCardScanned(uid); 
     rfid.PICC_HaltA(); 
     rfid.PCD_StopCrypto1();
-  }
-
-  // Data Logging Loop
-  unsigned long timeSeconds = millis() / 1000;
-  // Add If Statement to Write Data to SD Card when Status Changes
-  dataFile = SD.open("datalogging.csv", FILE_WRITE);
-    if(dataFile) {
-      dataFile.print(timeSeconds);
-      dataFile.print(",");
-      // Write Check-In/Out Status
-      dataFile.close();
-      Serial.println("Data Saved");
-    }
-    else {
-    Serial.println("Error Opening File");
   }
 }
