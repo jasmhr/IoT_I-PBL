@@ -49,10 +49,10 @@ unsigned long lastScanTime = 0;  // Store Last Scan Time
 String authorizedUIDs[] = {"D0 A3 F5 5F"}; // Store Authorized UIDs
 int numAuthorized = 1; // Number Of Authorized UIDs
 bool roomOccupied = false; // Track Room Status
+bool flashRedLED = false; // Track Red LED Flashing
 int ledState = LOW; // Variable to make the Red LED Flash
 const long interval = 1000; // Blinking Interval in ms
 unsigned long previousMillis = 0; // Store Last LED Update
-unsigned long currentMillis = millis(); // Store Current Millis()
 
 // getUID() turns the card's UID bytes into text
 String getUID() {
@@ -84,6 +84,7 @@ bool isAuthorized(String uid) {
 void allIndicatorsOff() { 
   digitalWrite(GREEN_LED, LOW); 
   digitalWrite(RED_LED, LOW);
+  flashRedLED = false;
 } 
 
 // onAccessGranted() is called when a valid card is detected
@@ -92,13 +93,11 @@ void onAccessGranted() {
   roomOccupied = !roomOccupied;
   if (roomOccupied == true) { // Runs if the room is occupied
     digitalWrite(GREEN_LED, HIGH); 
-    // checkInCallback(); // Call checkIn handler
-    // onCheckIn();
+    onCheckIn();
     Serial.println("OCCUPIED"); 
   } 
   else { // Runs if the room is checked out of or free
-    // checkOutCallback(); // Call checkOut handler
-    // onCheckOut();
+    onCheckOut();
     Serial.println("FREE");
   }
 }
@@ -107,15 +106,7 @@ void onAccessGranted() {
 void onAccessDenied() { 
   Serial.println("ACCESS DENIED"); 
   allIndicatorsOff(); 
-  if (currentMillis - millis() >= interval) {
-    previousMillis = currentMillis;
-    if (ledState == LOW) {
-      ledState = HIGH;
-    } else {
-      ledState = LOW;
-    }
-  digitalWrite(RED_LED, ledState);
-  }
+  flashRedLED = true;
 }
 
 // onCardScanned() is called when a card is scanned
@@ -145,22 +136,15 @@ void onCardScanned(String uid) {
 // ------------------------------- Data Logging (Done by James, 2/3) -------------------------------
 // [5] D. Saju, “Lab #5: SPI & SD Card” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
 // [6] D. Saju, “Lab #10: Event-Driven Programming” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
-unsigned long timeSeconds = millis() / 1000; // Track time
 File dataFile; // Create file object
 
-// volatile bool checkInFlag = false; // Flag a check-in
-// volatile bool checkOutFlag = false; // Flag a check-out
-// typedef void (*Callback)();
-// Callback checkInCallback;
-// Callback checkOutCallback;
-// Callback helpButtonCallback;
-
 void onCheckIn() {
+  unsigned long timeSeconds = millis() / 1000;
   dataFile = SD.open("log.csv", FILE_WRITE);
   if(dataFile) {
     dataFile.print(timeSeconds);
     dataFile.print(",");
-    dataFile.print("Check-In");
+    dataFile.println("Check-In");
     dataFile.close();
     Serial.println("Check-In Logged");
   }
@@ -170,11 +154,12 @@ void onCheckIn() {
 }
 
 void onCheckOut() {
+  unsigned long timeSeconds = millis() / 1000;
   dataFile = SD.open("log.csv", FILE_WRITE);
   if(dataFile) {
     dataFile.print(timeSeconds);
     dataFile.print(",");
-    dataFile.print("Check-Out");
+    dataFile.println("Check-Out");
     dataFile.close();
     Serial.println("Check-Out Logged");
   }
@@ -184,11 +169,12 @@ void onCheckOut() {
 }
 
 void onHelpRequested() {
+  unsigned long timeSeconds = millis() / 1000;
   dataFile = SD.open("log.csv", FILE_WRITE);
   if(dataFile) {
     dataFile.print(timeSeconds);
     dataFile.print(",");
-    dataFile.print("Help Requested");
+    dataFile.println("Help Requested");
     dataFile.close();
     Serial.println("Help Request Logged");
   }
@@ -196,12 +182,6 @@ void onHelpRequested() {
     Serial.println("Error Opening File");
   }
 }
-
-// Callbacks
-// checkInCallback = onCheckIn;
-// checkOutCallback = onCheckOut;
-// helpButtonCallback = onHelpRequested;
-
 
 // ------------------------------- Staff Data Page (Done by James, 3/3) -------------------------------
 // [7] D. Saju, " Lab #7: ESP32 Wi-Fi Access Points and Web Servers" 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
@@ -212,11 +192,16 @@ WebServer server(80); // Create Web Server Object
 // [SPECIAL FEATURE] Staff Message over BLE (Done by Desire & James, 1/1)
 
 void setup() {
-  // Data Logging Setup
+  // Standard Setup
+  Serial.begin(115200); // Set Baud Rate to 115200
+  Serial.println("Program Started"); // Indicate Program Start
   SPI.begin(); // Initialize SPI
-  millis(); // Initialize millis() function to track time since start-up
-  Serial.begin(115200);
-  Serial.println("Program Started");
+
+  // Pin Setup
+  pinMode(GREEN_LED, OUTPUT); // RFID Check-In
+  pinMode(RED_LED, OUTPUT); // RFID Check-In
+
+  // Data Logging Setup
   Serial.println("Initializing SD Card...");
   if(SD.begin(SD_CS)) { 
     Serial.println("SD Card Found"); 
@@ -224,31 +209,32 @@ void setup() {
   else { 
     Serial.println("SD Card Not Found"); 
   }
-
-  dataFile = SD.open("log.csv", FILE_WRITE);
-  if(dataFile) {
-    dataFile.println("Time, Event"); // CSV Header
-    dataFile.close();
-    Serial.println("CSV Header Written");
+  if (SD.exists("log.csv")) {
+    Serial.println("File Already Exists");
   }
   else {
-    Serial.println("Failed To Create File");
+    Serial.println("Creating File...");
+    dataFile = SD.open("log.csv", FILE_WRITE);
+    if(dataFile) {
+      dataFile.println("Time, Event"); // CSV Header
+      dataFile.close();
+      Serial.println("CSV Header Written");
+    }
+    else {
+      Serial.println("Failed To Create File");
+    }
   }
 
-  // Wi-Fi code
+  // Wi-Fi Setup
   WiFi.softAP(ssid, password);
   Serial.print("IP Address: ");
   Serial.println( WiFi.softAPIP());
-  // Server start
+
+  // Server Setup
   server.begin();
   Serial.println("Web Server Started");
 
-  // Pin Setup
-  pinMode(GREEN_LED, OUTPUT); // RFID Check-In
-  pinMode(RED_LED, OUTPUT); // RFID Check-In
-
-  // RFID Check-In Setup
-  SPI.begin();
+  // RFID Setup
   rfid.PCD_Init();
   rfid.PCD_DumpVersionToSerial();
   Serial.println("Tap a card...");
@@ -258,11 +244,25 @@ void loop() {
   // Server Loop
   server.handleClient();
 
-  // RFID Check-In Loop
+  // RFID Loop
   if (rfid.PICC_IsNewCardPresent() == true && rfid.PICC_ReadCardSerial() == true) { 
     String uid = getUID(); 
     onCardScanned(uid); 
     rfid.PICC_HaltA(); 
     rfid.PCD_StopCrypto1();
+  }
+
+  // Red LED Loop
+  if (flashRedLED) {
+    unsigned long currentMillis = millis(); // Store Current Millis()
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+      if (ledState == LOW) { // if the LED is off, turn it on, and vice-versa
+        ledState = HIGH;
+      } else {
+        ledState = LOW;
+      }
+      digitalWrite(RED_LED, ledState);
+    }
   }
 }
