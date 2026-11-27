@@ -91,12 +91,12 @@ void allIndicatorsOff() {
 void onAccessGranted() {
   allIndicatorsOff();
   roomOccupied = !roomOccupied;
-  if (roomOccupied == true) { // Runs if the room is occupied
+  if (roomOccupied == true) {       // Runs if the room is occupied
     digitalWrite(GREEN_LED, HIGH); 
     onCheckIn();
     Serial.println("OCCUPIED"); 
   } 
-  else { // Runs if the room is checked out of or free
+  else {                            // Runs if the room is free
     onCheckOut();
     Serial.println("FREE");
   }
@@ -134,8 +134,8 @@ void onCardScanned(String uid) {
 // Event and Status Byte (Done by Desire, 3/3)
 
 // ------------------------------- Data Logging (Done by James, 2/3) -------------------------------
-// [5] D. Saju, “Lab #5: SPI & SD Card” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
-// [6] D. Saju, “Lab #10: Event-Driven Programming” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+// [6] D. Saju, “Lab #5: SPI & SD Card” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+// [7] D. Saju, “Lab #10: Event-Driven Programming” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
 File dataFile; // Create file object
 
 void onCheckIn() {
@@ -184,12 +184,25 @@ void onHelpRequested() {
 }
 
 // ------------------------------- Staff Data Page (Done by James, 3/3) -------------------------------
-// [7] D. Saju, " Lab #7: ESP32 Wi-Fi Access Points and Web Servers" 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
-const char* ssid = "SmartStudyRoomJD"; // Wi-Fi Access Point SSID
+// [7] D. Saju, "Lab #7: ESP32 Wi-Fi Access Points and Web Servers" 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+// [8] D. Saju, "Lab #11: Arrays, Loops and JSON" 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+const char* ssid = "StudyRoom01"; // Wi-Fi Access Point SSID
 const char* password = "12345678"; // Wi-Fi Access Point Password
 WebServer server(80); // Create Web Server Object
 
-// [SPECIAL FEATURE] Staff Message over BLE (Done by Desire & James, 1/1)
+void dataPage() {
+  JsonDocument doc; // Create JSON Document
+  doc["roomOccupied"] = roomOccupied; // Add Room Status
+  // doc["averageTemperature"] = averageTemperature; // Add Average Temperature
+  // doc["fanLevel"] = fanLevel; // Add Fan Level
+  // doc["statusByte"] = statusByte; // Add Status Byte
+
+  String json; // Create JSON String
+  serializeJson(doc, json); // Serialize JSON Document
+  server.send(200, "application/json", json); // Send JSON
+}
+
+// ------------------------------- Staff Message over BLE (Done by Desire) -------------------------------
 
 void setup() {
   // Standard Setup
@@ -233,8 +246,9 @@ void setup() {
   // Server Setup
   server.begin();
   Serial.println("Web Server Started");
+  server.on("/data", dataPage); // Route
 
-  // RFID Setup
+  // RFID Check-In Setup
   rfid.PCD_Init();
   rfid.PCD_DumpVersionToSerial();
   Serial.println("Tap a card...");
@@ -244,7 +258,7 @@ void loop() {
   // Server Loop
   server.handleClient();
 
-  // RFID Loop
+  // RFID Check-In Loop
   if (rfid.PICC_IsNewCardPresent() == true && rfid.PICC_ReadCardSerial() == true) { 
     String uid = getUID(); 
     onCardScanned(uid); 
