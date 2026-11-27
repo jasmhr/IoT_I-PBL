@@ -40,9 +40,59 @@
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
-// ------------------------------- RFID Check-In (Done by James, 1/3) -------------------------------
-// [1] D. Saju, “Lab #9: MFRC522” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
-// [2] https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/ 
+// ------------------------------- Data Logging (Done by James, 1/3) -------------------------------
+// [1] D. Saju, “Lab #5: SPI & SD Card” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+// [2] D. Saju, “Lab #10: Event-Driven Programming” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+File dataFile; // Create file object
+
+void onCheckIn() {
+  unsigned long timeSeconds = millis() / 1000;
+  dataFile = SD.open("log.csv", FILE_WRITE);
+  if(dataFile) {
+    dataFile.print(timeSeconds);
+    dataFile.print(",");
+    dataFile.println("Check-In");
+    dataFile.close();
+    Serial.println("Check-In Logged");
+  }
+  else {
+    Serial.println("Error Opening File");
+  }
+}
+
+void onCheckOut() {
+  unsigned long timeSeconds = millis() / 1000;
+  dataFile = SD.open("log.csv", FILE_WRITE);
+  if(dataFile) {
+    dataFile.print(timeSeconds);
+    dataFile.print(",");
+    dataFile.println("Check-Out");
+    dataFile.close();
+    Serial.println("Check-Out Logged");
+  }
+  else {
+    Serial.println("Error Opening File");
+  }
+}
+
+void onHelpRequested() {
+  unsigned long timeSeconds = millis() / 1000;
+  dataFile = SD.open("log.csv", FILE_WRITE);
+  if(dataFile) {
+    dataFile.print(timeSeconds);
+    dataFile.print(",");
+    dataFile.println("Help Requested");
+    dataFile.close();
+    Serial.println("Help Request Logged");
+  }
+  else {
+    Serial.println("Error Opening File");
+  }
+}
+
+// ------------------------------- RFID Check-In (Done by James, 2/3) -------------------------------
+// [3] D. Saju, “Lab #9: MFRC522” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
+// [4] https://docs.arduino.cc/built-in-examples/digital/BlinkWithoutDelay/ 
 MFRC522 rfid(RFID_SS, RFID_RST); // Create MFRC22 Object
 String lastUID = ""; // Store Last Scanned UID
 unsigned long lastScanTime = 0;  // Store Last Scan Time
@@ -51,7 +101,7 @@ int numAuthorized = 1; // Number Of Authorized UIDs
 bool roomOccupied = false; // Track Room Status
 bool flashRedLED = false; // Track Red LED Flashing
 int ledState = LOW; // Variable to make the Red LED Flash
-const long interval = 1000; // Blinking Interval in ms
+const long interval = 200; // Blinking Interval in ms
 unsigned long previousMillis = 0; // Store Last LED Update
 
 // getUID() turns the card's UID bytes into text
@@ -132,56 +182,6 @@ void onCardScanned(String uid) {
 // Fan Control (Done by Desire, 2/3)
 
 // Event and Status Byte (Done by Desire, 3/3)
-
-// ------------------------------- Data Logging (Done by James, 2/3) -------------------------------
-// [6] D. Saju, “Lab #5: SPI & SD Card” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
-// [7] D. Saju, “Lab #10: Event-Driven Programming” 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
-File dataFile; // Create file object
-
-void onCheckIn() {
-  unsigned long timeSeconds = millis() / 1000;
-  dataFile = SD.open("log.csv", FILE_WRITE);
-  if(dataFile) {
-    dataFile.print(timeSeconds);
-    dataFile.print(",");
-    dataFile.println("Check-In");
-    dataFile.close();
-    Serial.println("Check-In Logged");
-  }
-  else {
-    Serial.println("Error Opening File");
-  }
-}
-
-void onCheckOut() {
-  unsigned long timeSeconds = millis() / 1000;
-  dataFile = SD.open("log.csv", FILE_WRITE);
-  if(dataFile) {
-    dataFile.print(timeSeconds);
-    dataFile.print(",");
-    dataFile.println("Check-Out");
-    dataFile.close();
-    Serial.println("Check-Out Logged");
-  }
-  else {
-    Serial.println("Error Opening File");
-  }
-}
-
-void onHelpRequested() {
-  unsigned long timeSeconds = millis() / 1000;
-  dataFile = SD.open("log.csv", FILE_WRITE);
-  if(dataFile) {
-    dataFile.print(timeSeconds);
-    dataFile.print(",");
-    dataFile.println("Help Requested");
-    dataFile.close();
-    Serial.println("Help Request Logged");
-  }
-  else {
-    Serial.println("Error Opening File");
-  }
-}
 
 // ------------------------------- Staff Data Page (Done by James, 3/3) -------------------------------
 // [7] D. Saju, "Lab #7: ESP32 Wi-Fi Access Points and Web Servers" 243-3E5-DW Internet of Things I, Dawson College, Fall 2026
